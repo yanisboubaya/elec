@@ -1,0 +1,171 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include<Adafruit_SSD1306.h>
+// put function declarations here:
+#define SCREEN_WIDTH 128
+#define SCREENE_HEIGHT 64
+Adafruit_SSD1306 display(SCREEN_WIDTH,SCREENE_HEIGHT,&Wire,-1);
+int etatled = 0 ;
+int menu =0 ;
+const int bouton =4;
+const int bouton2 =7;
+const int bouton3 =2 ;
+const int led =5 ;
+const int potentiometre= A7;
+const int buzzer = 11 ;
+bool reveilActive = false;
+
+int valuepot;
+int choix =0 ;
+int a=1 ;
+int b=1 ;
+int heure =1 ;
+int min = 1 ;
+
+
+void reveil(){
+   if (a == heure && b == min) {
+tone(buzzer, 659);  // E
+  delay(150);
+  noTone(buzzer);
+  delay(50);
+
+  tone(buzzer, 622);  // Eb
+  delay(150);
+  noTone(buzzer);
+  delay(50);
+
+  tone(buzzer, 659);  // E
+  delay(150);
+  noTone(buzzer);
+  delay(50);
+  tone(buzzer, 622);  // Eb
+  delay(150);
+  noTone(buzzer);
+  delay(50);
+
+  tone(buzzer, 659);  // E
+  delay(150);
+  noTone(buzzer);
+  delay(50);
+
+  tone(buzzer, 494);  // B
+  delay(150);
+  noTone(buzzer);
+  delay(50);
+
+  tone(buzzer, 587);  // D
+  delay(150);
+  noTone(buzzer);
+  delay(50);
+
+  tone(buzzer, 523);  // C
+  delay(150);
+  noTone(buzzer);
+  delay(50);
+
+  tone(buzzer, 587);  // D
+  delay(150);
+  noTone(buzzer);
+  delay(50);
+
+  tone(buzzer, 659);  // E
+  delay(150);
+  noTone(buzzer);
+  delay(50);
+ }
+}
+ void activationReveil() {
+ reveilActive = !reveilActive;
+ if(reveilActive){
+digitalWrite(led,HIGH);
+reveil();
+}
+ 
+ else{
+  digitalWrite(led,LOW);
+ }
+  interrupts();
+}
+
+
+void setup() {
+Serial.begin(115200);
+pinMode(bouton,INPUT);
+pinMode(bouton2,INPUT);
+pinMode(bouton3,INPUT);
+pinMode (led,OUTPUT);
+pinMode (potentiometre,INPUT);
+pinMode(buzzer,OUTPUT);
+attachInterrupt(digitalPinToInterrupt(bouton3), activationReveil, RISING);
+
+if (!display.begin(SSD1306_SWITCHCAPVCC,0x3c)){
+  Serial.println(F("SSD1306_ allocation failed"));
+  for(;;);
+}
+
+}
+
+void affichermenu(){
+display.clearDisplay();
+display.setTextSize(2);
+display.setTextColor(WHITE);
+display.setCursor(1,10);
+int  etatbouton;
+int  etatbouton2;
+etatbouton=digitalRead(bouton);
+etatbouton2=digitalRead(bouton2);
+delay(100);
+if (etatbouton==HIGH){
+  menu++;
+}
+if (menu == 0){
+  display.println("MENU");
+}
+if (menu==1){
+display.println("régler l'heure\n");
+if (etatbouton2==HIGH){
+choix++;
+}
+if (choix ==1){
+  
+display.clearDisplay();
+valuepot=analogRead(potentiometre);
+b= map(valuepot,0,1023,0,59);
+display.setCursor(0,10);
+display.setTextSize(3);
+display.print(a);
+display.print( " : " );
+display.print(b);
+}
+if (choix ==2){
+  display.clearDisplay();
+  valuepot=analogRead(potentiometre);
+a = map(valuepot,0,1023,0,23);
+display.setCursor(0,10);
+display.setTextSize(3);
+display.print(a);
+display.print( " : " );
+display.print(b);
+}
+if (choix ==3){
+  choix = 0;
+}
+
+}
+if (menu ==2){
+display.println("choisir l'affichage\n");
+reveil();
+}
+if (menu==3){
+  menu =1 ;
+}
+display.display();
+
+}
+
+
+void loop() {
+affichermenu();
+}
