@@ -81,6 +81,7 @@ tone(buzzer, 659);  // E
  if(reveilActive){
 digitalWrite(led,HIGH);
 reveil();
+tempsDebut = millis(); // Enregistre le temps au début de l'activation
 }
  
  else{
