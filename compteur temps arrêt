@@ -1,0 +1,38 @@
+//code qui ne marche pas seul à tester avec le reste du programme
+
+
+#include <EEPROM.h>  //mémoire
+#include <NewPing.h>  //bibli qui envoie des impulsions au capteur à ultrasons pour verifier que l'alarme est tjs allumé
+#define EEPROM_ADDRESS 0 // Adresse de départ dans la mémoire EEPROM
+#define D? 9 // Broche de déclenchement du capteur, mettre les num de pin 
+#define R?     10 // Broche de réception du capteur
+NewPing sonar(D, R);
+
+unsigned long temps_debut = 0; // Initialisation à 0
+bool reveilEteint = false;
+//dans la loop
+  if (reveilActive && !reveilEteint) {
+    
+    unsigned long tempsFin = 0;
+
+    while (sonar.ping_cm() > SEUIL_DISTANCE_SON_ARRET) { //seuil à determiner experimentalement
+      delay(90); // Attendre 90 ms avant de vérifier à nouveau, exigence de l'énoncé
+    }
+
+    tempsFin = millis(); // Enregistrez le temps à l'arrêt du son
+    unsigned long tempsEcoule = tempsFin - tempsDebut; // Calculez le temps écoulé
+
+    // Enregistrez le temps écoulé dans la mémoire EEPROM
+    EEPROMWriteLong(EEPROM_ADDRESS, tempsEcoule);
+
+   
+    // Réinitialisez les variables pour la prochaine utilisation
+    alarmeActivee = false;
+    alarmeEteinte = true;
+  }
+
+
+
+
+
+
