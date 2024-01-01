@@ -165,6 +165,13 @@ if (menu==3){
 display.display();
 
 }
+if (menu==4){
+   consulterTemps();
+}
+if (menu==5){
+   effacerDonnees();
+}
+
 
 
 void loop() {
