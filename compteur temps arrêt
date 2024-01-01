@@ -32,6 +32,48 @@ bool reveilEteint = false;
   }
 
 
+void effacerDonnees() {
+  // Effacer les données dans la mémoire EEPROM
+  EEPROMWriteLong(EEPROM_ADDRESS, 0);
+  Serial.println("Données effacées.");
+}
+
+void consulterTemp() {
+  Serial.println("Parcourir les temps enregistrés :");
+  
+  int address = EEPROM_ADDRESS;
+  int index = 1; // Pour numéroter les temps enregistrés
+
+  while (address + sizeof(unsigned long) <= EEPROM.length()) {
+    unsigned long tempsEcoule = EEPROMReadLong(address);
+    
+    Serial.print("Temps ");
+    Serial.print(index);
+    Serial.print(" : ");
+    Serial.println(tempsEcoule);
+
+    address += sizeof(unsigned long);
+    index++;
+  }
+
+  Serial.println("Fin des temps enregistrés.");
+}
+//Un unsigned long est un entier non signé de 32 bits, soit 4 octets. donc pour écrire dans la mémoire il enregistre les 4 octets d'ou les 4 lignes
+// Fonction pour écrire une valeur long dans la mémoire EEPROM
+void EEPROMWriteLong(int address, unsigned long value) {
+  EEPROM.write(address, value & 0xFF);
+  EEPROM.write(address + 1, (value >> 8) & 0xFF);
+  EEPROM.write(address + 2, (value >> 16) & 0xFF);
+  EEPROM.write(address + 3, (value >> 24) & 0xFF);
+}
+
+// Fonction pour lire une valeur long depuis la mémoire EEPROM
+unsigned long EEPROMReadLong(int address) {
+  return (unsigned long)EEPROM.read(address) |
+         (unsigned long)EEPROM.read(address + 1) << 8 |
+         (unsigned long)EEPROM.read(address + 2) << 16 |
+         (unsigned long)EEPROM.read(address + 3) << 24;
+}
 
 
 
