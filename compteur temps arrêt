@@ -10,7 +10,7 @@ NewPing sonar(D, R);
 
 unsigned long temps_debut = 0; // Initialisation à 0
 bool reveilEteint = false;
-//dans la loop
+//dans le reste du programme
   if (reveilActive && !reveilEteint) {
     
     unsigned long tempsFin = 0;
