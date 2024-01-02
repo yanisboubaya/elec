@@ -2,17 +2,19 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include<Adafruit_SSD1306.h>
+#include<LedControl.h>
 // put function declarations here:
 #define SCREEN_WIDTH 128
 #define SCREENE_HEIGHT 64
 Adafruit_SSD1306 display(SCREEN_WIDTH,SCREENE_HEIGHT,&Wire,-1);
+
 int etatled = 0 ;
 int menu =0 ;
 const int bouton =4;
 const int bouton2 =7;
 const int bouton3 =2 ;
 const int led =5 ;
-const int potentiometre= A7;
+const int potentiometre= A0 ;
 const int buzzer = 11 ;
 bool reveilActive = false;
 
@@ -23,9 +25,26 @@ int b=1 ;
 int heure =1 ;
 int min = 1 ;
 
+volatile bool playReveil = false;
+
+//fonction permettant l'activation du réveil
+void activationReveil() {
+  reveilActive = !reveilActive;
+  if (reveilActive) {
+    digitalWrite(led, HIGH);
+      if (a == heure&&b == min) {
+        playReveil=true;
+
+      }
+  } else {
+    digitalWrite(led, LOW);
+      playReveil=false;
+   
+  }
+}
 
 void reveil(){
-   if (a == heure && b == min) {
+   if (playReveil) {
 tone(buzzer, 659);  // E
   delay(150);
   noTone(buzzer);
@@ -34,61 +53,78 @@ tone(buzzer, 659);  // E
   tone(buzzer, 622);  // Eb
   delay(150);
   noTone(buzzer);
-  delay(50);
+  delay(150);
 
   tone(buzzer, 659);  // E
   delay(150);
   noTone(buzzer);
-  delay(50);
+  delay(150);
+
   tone(buzzer, 622);  // Eb
   delay(150);
   noTone(buzzer);
-  delay(50);
+  delay(150);
 
   tone(buzzer, 659);  // E
   delay(150);
   noTone(buzzer);
-  delay(50);
+  delay(150);
 
   tone(buzzer, 494);  // B
   delay(150);
   noTone(buzzer);
-  delay(50);
+  delay(150);
 
   tone(buzzer, 587);  // D
   delay(150);
   noTone(buzzer);
-  delay(50);
+  delay(150);
 
   tone(buzzer, 523);  // C
   delay(150);
   noTone(buzzer);
-  delay(50);
+  delay(150);
 
   tone(buzzer, 587);  // D
   delay(150);
   noTone(buzzer);
-  delay(50);
+  delay(150);
 
-  tone(buzzer, 659);  // E
+  tone (buzzer,659);
   delay(150);
   noTone(buzzer);
-  delay(50);
+   tone (buzzer,587);
+  delay(150);
+  noTone(buzzer);
+   tone (buzzer,523);
+  delay(150);
+  noTone(buzzer);
+   tone (buzzer,587);
+  delay(150);
+  noTone(buzzer);
+  tone (buzzer,659);
+  delay(150);
+  noTone(buzzer);
+
+   tone (buzzer,957);
+  delay(150);
+  noTone(buzzer);
+   tone (buzzer,880);
+  delay(150);
+  noTone(buzzer);
+   tone (buzzer,784);
+  delay(150);
+  noTone(buzzer);
+   tone (buzzer,659);
+  delay(150);
+  noTone(buzzer);
+  tone (buzzer,587);
+  delay(150);
+  noTone(buzzer);
+  
  }
-}
- void activationReveil() {
- reveilActive = !reveilActive;
- if(reveilActive){
-digitalWrite(led,HIGH);
-reveil();
-tempsDebut = millis(); // Enregistre le temps au début de l'activation
 }
  
- else{
-  digitalWrite(led,LOW);
- }
-  interrupts();
-}
 
 
 void setup() {
@@ -120,6 +156,7 @@ etatbouton2=digitalRead(bouton2);
 delay(100);
 if (etatbouton==HIGH){
   menu++;
+  choix =0;
 }
 if (menu == 0){
   display.println("MENU");
@@ -155,25 +192,27 @@ if (choix ==3){
 }
 
 }
-if (menu ==2){
-display.println("choisir l'affichage\n");
-reveil();
+if (menu==2){
+  display.println("régler l'alarme");
 }
-if (menu==3){
-  menu =1 ;
+if (menu ==3){
+display.println("choisir l'affichage\n");
+}
+if (menu ==4 ){
+  display.println("consulté temsp");
+}
+if (menu ==5 ){
+  display.println("effacée temps");
+}
+if (menu ==6){
+ menu=1;
 }
 display.display();
-
 }
-if (menu==4){
-   consulterTemps();
-}
-if (menu==5){
-   effacerDonnees();
-}
-
-
 
 void loop() {
 affichermenu();
+reveil();
 }
+
+
