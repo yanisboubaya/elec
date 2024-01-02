@@ -1,0 +1,54 @@
+#include <Wire.h>
+#include <RTClib.h>
+#include <LedControl.h>
+#include <TimerOne.h>
+
+RTC_DS3231 rtc; // Déclaration de l'objet RTC
+LedControl lc = LedControl(11, 13, 10, 1); // Modification des broches pour la matrice 32x8
+
+volatile bool alarmeActivee = false; // Variable pour indiquer si l'alarme est activée
+volatile unsigned long compteur = 0; // Compteur de temps
+unsigned long dernierTemps = 0;
+
+void setup() {
+  Serial.begin(9600);
+  Wire.begin();
+  
+  pinMode(9, INPUT_PULLUP); // Modification de la broche pour l'interruption
+  attachInterrupt(digitalPinToInterrupt(9), FS1, RISING); // Modification de la broche pour l'interruption
+  
+  if (!rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    while (1);
+  }
+
+  lc.shutdown(0, false);
+  lc.setIntensity(0, 8);
+  lc.clearDisplay(0);
+
+  Timer1.initialize(1000000); // Interruption toutes les secondes
+  Timer1.attachInterrupt(FS2); // Modification de la broche pour l'interruption
+}
+
+void loop() {
+  // Autres tâches possibles dans la boucle loop
+}
+
+void FS1() {
+  compteur++; // Incrémentation du compteur à chaque front montant du signal
+  // Ajoutez ici la logique pour clignoter les LEDs selon le compteur si nécessaire
+}
+
+void FS2() {
+  DateTime now = rtc.now();
+  int heure = now.hour();
+  int minute = now.minute();
+  
+  lc.clearDisplay(0); // Effacer l'affichage précédent
+  
+  // Afficher l'heure sur la matrice LED
+  lc.setDigit(0, 6, heure / 10, false);
+  lc.setDigit(0, 7, heure % 10, false);
+  lc.setDigit(0, 8, minute / 10, false);
+  lc.setDigit(0, 9, minute % 10, false);
+}
