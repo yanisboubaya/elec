@@ -3,10 +3,15 @@
 #include <Adafruit_GFX.h>
 #include<Adafruit_SSD1306.h>
 #include<LedControl.h>
+#include<Encoder.h>
+#include <toneAC.h>
+
 // put function declarations here:
 #define SCREEN_WIDTH 128
 #define SCREENE_HEIGHT 64
 Adafruit_SSD1306 display(SCREEN_WIDTH,SCREENE_HEIGHT,&Wire,-1);
+Encoder myEncoder(3, 6); // Broches A et B de l'encodeur
+LedControl lc = LedControl(12,13,10,4);
 
 int etatled = 0 ;
 int menu =0 ;
@@ -21,9 +26,10 @@ bool reveilActive = false;
 int valuepot;
 int choix =0 ;
 int a=1 ;
-int b=1 ;
-int heure =1 ;
-int min = 1 ;
+int b=2 ;
+int heure =17 ;
+int min = 42 ;
+ int encoderValue ;
 
 volatile bool playReveil = false;
 
@@ -45,82 +51,82 @@ void activationReveil() {
 
 void reveil(){
    if (playReveil) {
-tone(buzzer, 659);  // E
+toneAC(buzzer, 659);  // E
   delay(150);
-  noTone(buzzer);
+  notoneAC(buzzer);
   delay(50);
 
-  tone(buzzer, 622);  // Eb
+  toneAC(buzzer, 622);  // Eb
   delay(150);
-  noTone(buzzer);
-  delay(150);
-
-  tone(buzzer, 659);  // E
-  delay(150);
-  noTone(buzzer);
+  notoneAC(buzzer);
   delay(150);
 
-  tone(buzzer, 622);  // Eb
+  toneACAC(buzzer, 659);  // E
   delay(150);
-  noTone(buzzer);
-  delay(150);
-
-  tone(buzzer, 659);  // E
-  delay(150);
-  noTone(buzzer);
+  notoneAC(buzzer);
   delay(150);
 
-  tone(buzzer, 494);  // B
+  toneACAC(buzzer, 622);  // Eb
   delay(150);
-  noTone(buzzer);
-  delay(150);
-
-  tone(buzzer, 587);  // D
-  delay(150);
-  noTone(buzzer);
+  notoneACAC(buzzer);
   delay(150);
 
-  tone(buzzer, 523);  // C
+  toneAC(buzzer, 659);  // E
   delay(150);
-  noTone(buzzer);
-  delay(150);
-
-  tone(buzzer, 587);  // D
-  delay(150);
-  noTone(buzzer);
+  notoneAC(buzzer);
   delay(150);
 
-  tone (buzzer,659);
+  toneAC(buzzer, 494);  // B
   delay(150);
-  noTone(buzzer);
-   tone (buzzer,587);
+  notoneAC(buzzer);
   delay(150);
-  noTone(buzzer);
-   tone (buzzer,523);
-  delay(150);
-  noTone(buzzer);
-   tone (buzzer,587);
-  delay(150);
-  noTone(buzzer);
-  tone (buzzer,659);
-  delay(150);
-  noTone(buzzer);
 
-   tone (buzzer,957);
+  toneAC(buzzer, 587);  // D
   delay(150);
-  noTone(buzzer);
-   tone (buzzer,880);
+  notoneAC(buzzer);
   delay(150);
-  noTone(buzzer);
-   tone (buzzer,784);
+
+  toneAC(buzzer, 523);  // C
   delay(150);
-  noTone(buzzer);
-   tone (buzzer,659);
+  notoneAC(buzzer);
   delay(150);
-  noTone(buzzer);
-  tone (buzzer,587);
+
+  toneAC(buzzer, 587);  // D
   delay(150);
-  noTone(buzzer);
+  notoneAC(buzzer);
+  delay(150);
+
+  toneAC (buzzer,659);
+  delay(150);
+  notoneAC(buzzer);
+   toneAC (buzzer,587);
+  delay(150);
+  notoneAC(buzzer);
+   toneAC (buzzer,523);
+  delay(150);
+  notoneAC(buzzer);
+   toneAC (buzzer,587);
+  delay(150);
+  notoneAC(buzzer);
+  toneAC (buzzer,659);
+  delay(150);
+  notoneAC(buzzer);
+
+   toneAC (buzzer,957);
+  delay(150);
+  notoneAC(buzzer);
+   toneAC (buzzer,880);
+  delay(150);
+  notoneAC(buzzer);
+   toneAC (buzzer,784);
+  delay(150);
+  notoneAC(buzzer);
+   toneAC (buzzer,659);
+  delay(150);
+  notoneAC(buzzer);
+  toneAC (buzzer,587);
+  delay(150);
+  notoneAC(buzzer);
   
  }
 }
@@ -137,12 +143,25 @@ pinMode (potentiometre,INPUT);
 pinMode(buzzer,OUTPUT);
 attachInterrupt(digitalPinToInterrupt(bouton3), activationReveil, RISING);
 
+
 if (!display.begin(SSD1306_SWITCHCAPVCC,0x3c)){
   Serial.println(F("SSD1306_ allocation failed"));
   for(;;);
 }
+  display.display();
+  delay(2000);
+  display.clearDisplay();
+
+for (int i = 0 ;i<4;i++){
+  lc.shutdown(i, false);
+  lc.setIntensity(i, 8);
+  lc.clearDisplay(1);
+}
 
 }
+
+
+
 
 void affichermenu(){
 display.clearDisplay();
@@ -167,10 +186,48 @@ if (etatbouton2==HIGH){
 choix++;
 }
 if (choix ==1){
-  
+encoderValue = myEncoder.read()/4 % 60; // Limiter la plage de valeurs de 0 à 59
+  if (encoderValue < 0) {
+    encoderValue += 60;
+    min =encoderValue ;
+  }
 display.clearDisplay();
-valuepot=analogRead(potentiometre);
-b= map(valuepot,0,1023,0,59);
+display.setCursor(0,10);
+display.setTextSize(3);
+display.print(heure);
+display.print( " : " );
+display.print(min);
+  
+}
+if (choix ==2){
+  encoderValue = myEncoder.read()/4 % 24; // Limiter la plage de valeurs de 0 à 59
+  if (encoderValue < 0) {
+    encoderValue += 24;
+    heure=encoderValue ;
+  }
+display.clearDisplay();
+display.setCursor(0,10);
+display.setTextSize(3);
+display.print(heure);
+display.print( " : " );
+display.print(min);
+}
+if (choix ==3){
+  choix = 0;
+}
+}
+if (menu==2){
+  if (etatbouton2==HIGH){
+choix++;
+}
+display.println("régler alarme");
+if (choix ==1){
+encoderValue = myEncoder.read()/4 % 60; // Limiter la plage de valeurs de 0 à 59
+  if (encoderValue < 0) {
+    encoderValue += 60;
+    b =encoderValue ;
+  }
+display.clearDisplay();
 display.setCursor(0,10);
 display.setTextSize(3);
 display.print(a);
@@ -178,9 +235,12 @@ display.print( " : " );
 display.print(b);
 }
 if (choix ==2){
-  display.clearDisplay();
-  valuepot=analogRead(potentiometre);
-a = map(valuepot,0,1023,0,23);
+  encoderValue = myEncoder.read()/4 % 24; // Limiter la plage de valeurs de 0 à 59
+  if (encoderValue < 0) {
+    encoderValue += 24;
+    a=encoderValue ;
+  }
+display.clearDisplay();
 display.setCursor(0,10);
 display.setTextSize(3);
 display.print(a);
@@ -191,9 +251,6 @@ if (choix ==3){
   choix = 0;
 }
 
-}
-if (menu==2){
-  display.println("régler l'alarme");
 }
 if (menu ==3){
 display.println("choisir l'affichage\n");
@@ -208,11 +265,25 @@ if (menu ==6){
  menu=1;
 }
 display.display();
+
 }
 
 void loop() {
+
+
 affichermenu();
 reveil();
 }
 
+
+
+
+
+
+
+  
+
+
+
+  
 
