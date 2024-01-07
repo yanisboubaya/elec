@@ -2,165 +2,97 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include<Adafruit_SSD1306.h>
-#include<LedControl.h>
+#include <LedControl.h>
 #include<Encoder.h>
-#include <toneAC.h>
-
+#include<MsTimer2.h>
+#include<RTClib.h>
+#include<SPI.h>
 // put function declarations here:
 #define SCREEN_WIDTH 128
 #define SCREENE_HEIGHT 64
-Adafruit_SSD1306 display(SCREEN_WIDTH,SCREENE_HEIGHT,&Wire,-1);
+Adafruit_SSD1306 display(SCREEN_WIDTH,SCREENE_HEIGHT,&Wire);
 Encoder myEncoder(3, 6); // Broches A et B de l'encodeur
-LedControl lc = LedControl(12,13,10,4);
+LedControl lc = LedControl(12,13,11,4);
 
 int etatled = 0 ;
 int menu =0 ;
+const int trigPin = 9; // Broche de déclenchement (Trigger)
+const int echoPin = 10; 
 const int bouton =4;
 const int bouton2 =7;
 const int bouton3 =2 ;
 const int led =5 ;
-const int potentiometre= A0 ;
-const int buzzer = 11 ;
-bool reveilActive = false;
 
-int valuepot;
+const int buzzer = 8 ;
+bool reveilActive = false;
+bool AmPm= false ;
+
 int choix =0 ;
 int a=1 ;
-int b=2 ;
-int heure =17 ;
-int min = 42 ;
+int b=1 ;
+int heure =1 ;
+int min = 1 ;
  int encoderValue ;
-
 volatile bool playReveil = false;
+volatile bool buzzeractiv = false;
+volatile bool ledState =false ;
+volatile unsigned long tempsdebut = 0;
+volatile unsigned long tempsfin = 0;
+int tempsmis = 0 ;
 
-//fonction permettant l'activation du réveil
+
+
+
+
+byte numbers[10][8] = {
+  {B0111110, B1000001, B1000001, B1000001, B1000001, B1000001, B1000001, B0111110}, // 0
+  {B0100000, B1100000, B0100000, B0100000, B0100000, B0100000, B0100000, B1111110}, // 1
+  {B0111110, B1000001, B1000000, B0111110, B0000001, B1000001, B1000001, B0111110}, // 2
+  {B0111110, B1000001, B1000001, B0111110, B1000001, B1000001, B1000001, B0111110}, // 3
+  {B1000001, B1000001, B1000001, B1111111, B0000001, B0000001, B0000001, B0000001}, // 4
+  {B1111110, B1000001, B1000001, B0111110, B0000001, B1000001, B1000001, B0111110}, // 5
+  {B0111110, B1000001, B1000001, B0111111, B1000001, B1000001, B1000001, B0111110}, // 6
+  {B1111111, B1000001, B1000001, B0000010, B0000010, B0000010, B0000010, B0000010}, // 7
+  {B0111110, B1000001, B1000001, B0111110, B1000001, B1000001, B1000001, B0111110}, // 8
+  {B0111110, B1000001, B1000001, B0111111, B0000001, B1000001, B1000001, B0111110}  // 9
+};
+
+
+
+
 void activationReveil() {
   reveilActive = !reveilActive;
   if (reveilActive) {
     digitalWrite(led, HIGH);
-      if (a == heure&&b == min) {
-        playReveil=true;
-
       }
-  } else {
+   else {
     digitalWrite(led, LOW);
       playReveil=false;
-   
   }
 }
+RTC_DS1307 rtc; // Initialisation de la RTC
 
-void reveil(){
-   if (playReveil) {
-toneAC(buzzer, 659);  // E
-  delay(150);
-  notoneAC(buzzer);
-  delay(50);
-
-  toneAC(buzzer, 622);  // Eb
-  delay(150);
-  notoneAC(buzzer);
-  delay(150);
-
-  toneACAC(buzzer, 659);  // E
-  delay(150);
-  notoneAC(buzzer);
-  delay(150);
-
-  toneACAC(buzzer, 622);  // Eb
-  delay(150);
-  notoneACAC(buzzer);
-  delay(150);
-
-  toneAC(buzzer, 659);  // E
-  delay(150);
-  notoneAC(buzzer);
-  delay(150);
-
-  toneAC(buzzer, 494);  // B
-  delay(150);
-  notoneAC(buzzer);
-  delay(150);
-
-  toneAC(buzzer, 587);  // D
-  delay(150);
-  notoneAC(buzzer);
-  delay(150);
-
-  toneAC(buzzer, 523);  // C
-  delay(150);
-  notoneAC(buzzer);
-  delay(150);
-
-  toneAC(buzzer, 587);  // D
-  delay(150);
-  notoneAC(buzzer);
-  delay(150);
-
-  toneAC (buzzer,659);
-  delay(150);
-  notoneAC(buzzer);
-   toneAC (buzzer,587);
-  delay(150);
-  notoneAC(buzzer);
-   toneAC (buzzer,523);
-  delay(150);
-  notoneAC(buzzer);
-   toneAC (buzzer,587);
-  delay(150);
-  notoneAC(buzzer);
-  toneAC (buzzer,659);
-  delay(150);
-  notoneAC(buzzer);
-
-   toneAC (buzzer,957);
-  delay(150);
-  notoneAC(buzzer);
-   toneAC (buzzer,880);
-  delay(150);
-  notoneAC(buzzer);
-   toneAC (buzzer,784);
-  delay(150);
-  notoneAC(buzzer);
-   toneAC (buzzer,659);
-  delay(150);
-  notoneAC(buzzer);
-  toneAC (buzzer,587);
-  delay(150);
-  notoneAC(buzzer);
-  
- }
-}
- 
+// Déclaration des tableaux pour chaque chiffre
+byte chiffres[10][8] = {
+  {B00111000, B01000100, B01000100, B01000100, B01000100, B01000100, B01000100, B00111000}, // 0
+  {B00010000, B00110000, B00010000, B00010000, B00010000, B00010000, B00010000, B00111000}, // 1
+  {B00111000, B01000100, B00000100, B00000100, B00001000, B00010000, B00100000, B01111100}, // 2
+  {B00111000, B01000100, B00000100, B00011000, B00000100, B00000100, B01000100, B00111000}, // 3
+  {B00001000, B00011000, B00101000, B01001000, B01001000, B01111100, B00001000, B00001000}, // 4
+  {B01111100, B01000000, B01000000, B01111000, B00000100, B00000100, B01000100, B00111000}, // 5
+  {B00111000, B01000100, B01000000, B01111000, B01000100, B01000100, B01000100, B00111000}, // 6
+  {B01111100, B00000100, B00000100, B00001000, B00010000, B00100000, B00100000, B00100000}, // 7
+  {B00111000, B01000100, B01000100, B00111000, B01000100, B01000100, B01000100, B00111000}, // 8
+  {B00111000, B01000100, B01000100, B01000100, B00111100, B00000100, B01000100, B00111000}  // 9
+};
 
 
-void setup() {
-Serial.begin(115200);
-pinMode(bouton,INPUT);
-pinMode(bouton2,INPUT);
-pinMode(bouton3,INPUT);
-pinMode (led,OUTPUT);
-pinMode (potentiometre,INPUT);
-pinMode(buzzer,OUTPUT);
-attachInterrupt(digitalPinToInterrupt(bouton3), activationReveil, RISING);
-
-
-if (!display.begin(SSD1306_SWITCHCAPVCC,0x3c)){
-  Serial.println(F("SSD1306_ allocation failed"));
-  for(;;);
-}
-  display.display();
-  delay(2000);
-  display.clearDisplay();
-
-for (int i = 0 ;i<4;i++){
-  lc.shutdown(i, false);
-  lc.setIntensity(i, 8);
-  lc.clearDisplay(1);
-}
+void afficherChiffre(int chiffre, int position) {
+  for (int i = 0; i < 8; i++) {
+    lc.setRow(position, i, chiffres[chiffre][i]);
+  }
 
 }
-
-
 
 
 void affichermenu(){
@@ -175,52 +107,55 @@ etatbouton2=digitalRead(bouton2);
 delay(100);
 if (etatbouton==HIGH){
   menu++;
-  choix =0;
-}
+  choix = 0 ;
+
+};
+ if (etatbouton2==HIGH){
+choix++;
+delay(100);
+};
 if (menu == 0){
   display.println("MENU");
+
 }
 if (menu==1){
 display.println("régler l'heure\n");
-if (etatbouton2==HIGH){
-choix++;
-}
+
 if (choix ==1){
+  display.clearDisplay();
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+ 
 encoderValue = myEncoder.read()/4 % 60; // Limiter la plage de valeurs de 0 à 59
-  if (encoderValue < 0) {
+if (encoderValue < 0) {
     encoderValue += 60;
-    min =encoderValue ;
+    heure=encoderValue ;
   }
-display.clearDisplay();
-display.setCursor(0,10);
-display.setTextSize(3);
-display.print(heure);
-display.print( " : " );
-display.print(min);
-  
+    rtc.adjust(DateTime(00, 00, 00, heure, encoderValue, 00));
 }
 if (choix ==2){
+  display.clearDisplay();
+ 
   encoderValue = myEncoder.read()/4 % 24; // Limiter la plage de valeurs de 0 à 59
   if (encoderValue < 0) {
     encoderValue += 24;
     heure=encoderValue ;
   }
-display.clearDisplay();
-display.setCursor(0,10);
-display.setTextSize(3);
-display.print(heure);
-display.print( " : " );
-display.print(min);
+ rtc.adjust(DateTime(00, 00, 00, encoderValue, min, 00));
 }
+
+
 if (choix ==3){
   choix = 0;
 }
 }
+
 if (menu==2){
-  if (etatbouton2==HIGH){
-choix++;
-}
-display.println("régler alarme");
+ 
+display.println("regler alarme");
+
 if (choix ==1){
 encoderValue = myEncoder.read()/4 % 60; // Limiter la plage de valeurs de 0 à 59
   if (encoderValue < 0) {
@@ -235,6 +170,7 @@ display.print( " : " );
 display.print(b);
 }
 if (choix ==2){
+ 
   encoderValue = myEncoder.read()/4 % 24; // Limiter la plage de valeurs de 0 à 59
   if (encoderValue < 0) {
     encoderValue += 24;
@@ -247,16 +183,25 @@ display.print(a);
 display.print( " : " );
 display.print(b);
 }
+
 if (choix ==3){
   choix = 0;
 }
-
 }
+
 if (menu ==3){
 display.println("choisir l'affichage\n");
+if (choix =1){
+  AmPm = !AmPm ;
+  delay(500);
+}
 }
 if (menu ==4 ){
+  if (choix==1 ){
   display.println("consulté temsp");
+  tempsmis=tempsfin-tempsdebut;
+  display.println(tempsmis);
+  }
 }
 if (menu ==5 ){
   display.println("effacée temps");
@@ -268,11 +213,147 @@ display.display();
 
 }
 
-void loop() {
+void reveil(){
+  
+  if (reveilActive){
+  if (a == heure&&b == min) {
+        playReveil=true;
+        tempsdebut=millis();
+      }
+    unsigned long tempsActuel = millis();
+    int dureeReveil = tempsActuel - tempsdebut;
+   if (playReveil) {
+
+tone(buzzer, 659);  // E
+  delay(150);
+  noTone(buzzer);
+  delay(50);
+
+  tone(buzzer, 622);  // Eb
+  delay(150);
+  noTone(buzzer);
+  delay(150);
+
+  tone(buzzer, 659);  // E
+  delay(150);
+  noTone(buzzer);
+  delay(150);
+
+  tone(buzzer, 622);  // Eb
+  delay(150);
+  noTone(buzzer);
+  delay(150);
+
+  tone(buzzer, 659);  // E
+  delay(150);
+  noTone(buzzer);
+  delay(150);
+
+  tone(buzzer, 494);  // B
+  delay(150);
+  noTone(buzzer);
+  delay(150);
+
+  tone(buzzer, 587);  // D
+  delay(150);
+  noTone(buzzer);
+  delay(150);
+
+  tone(buzzer, 523);  // C
+  delay(150);
+  noTone(buzzer);
+  delay(150);
+
+  tone(buzzer, 587);  // D
+  delay(150);
+  noTone(buzzer);
+  delay(150);
+
+  tone (buzzer,659);
+  delay(150);
+  noTone(buzzer);
+   tone (buzzer,587);
+  delay(150);
+  noTone(buzzer);
+   tone (buzzer,523);
+  delay(150);
+  noTone(buzzer);
+   tone (buzzer,587);
+  delay(150);
+  noTone(buzzer);
+  tone (buzzer,659);
+  delay(150);
+  noTone(buzzer);
+
+   tone (buzzer,957);
+  delay(150);
+  noTone(buzzer);
+   tone (buzzer,880);
+  delay(150);
+  noTone(buzzer);
+   tone (buzzer,784);
+  delay(150);
+  noTone(buzzer);
+   tone (buzzer,659);
+  delay(150);
+  noTone(buzzer);
+  tone (buzzer,587);
+  delay(150);
+  noTone(buzzer);
+ }
+  
+}
+}
 
 
-affichermenu();
-reveil();
+void setup() {
+Serial.begin(115200);
+pinMode(bouton,INPUT);
+pinMode(bouton2,INPUT);
+pinMode(bouton3,INPUT);
+pinMode (led,OUTPUT);
+pinMode(buzzer,OUTPUT);
+pinMode(trigPin, OUTPUT);
+pinMode(echoPin, INPUT);
+digitalWrite(trigPin, LOW);
+attachInterrupt(digitalPinToInterrupt(bouton3), activationReveil, RISING);
+if (!display.begin(SSD1306_SWITCHCAPVCC,0x3c)){
+  Serial.println(F("SSD1306_ allocation failed"));
+  for(;;);
+}
+MsTimer2::set(1000,reveil);
+MsTimer2::start();
+display.clearDisplay();
+ Serial.begin(9600);
+
+for (int i = 0; i < 4; i++) {
+        lc.shutdown(i, false);   // Activer la matrice i
+        lc.setIntensity(i, 8);   // Régler l'intensité lumineuse (ajustez si nécessaire)
+        lc.clearDisplay(i);       // Effacer l'affichage de la matrice i
+    }
+      Wire.begin(); // Initialisation de la communication I2C
+     
+  rtc.begin(); // Initialisation de la RTC
+     rtc.adjust(DateTime (01,02,03,19,2,5));
+  
+   /*       // Désactiver les interruptions pendant la configuration
+  TCCR1A = 0;               // Configuration du Timer1
+  TCCR1B = 0;               // Remise à zéro des registres TCCR1A et TCCR1B
+  TCNT1 = 0;                // Remise à zéro du compteur
+  OCR1A = 15624;            // Valeur de comparaison pour une interruption toutes les secondes
+  TCCR1B |= (1 << WGM12);   // Mode CTC (Clear Timer on Compare Match)
+  TCCR1B |= (1 << CS12) | (1 << CS10);  // Configuration du prescaler à 1024
+  TIMSK1 |= (1 << OCIE1A);  // Activer l'interruption du comparateur A
+            // Activer les interruptions après la configuration
+
+}
+
+ISR(TIMER1_COMPA_vect) {
+  // Inverser l'état de la LED
+  ledState = !ledState;
+if (ledState){
+  lc.setLed(0,7,7,true);
+}*/
 }
 
 
@@ -281,9 +362,40 @@ reveil();
 
 
 
+void loop() {
+   Wire.beginTransmission(0x68);
+  DateTime now = rtc.now();
+  heure = now.hour();
+  min = now.minute();
+ 
+
+ Serial.println(now.second());
+ Wire.endTransmission(0x68);
+ if (AmPm&&heure>12){
+  int H =0;
+  H=heure -12 ;
+   afficherChiffre(H / 10, 3); // Afficher la dizaine d'heures
+   afficherChiffre(H % 10, 2); // Afficher l'unité d'heures
+   afficherChiffre(min / 10, 1); // Afficher la dizaine de minutes
+   afficherChiffre(min % 10, 0); // Afficher l'unité de minutes
+  lc.setLed(0,7,7,true);
+   }  
+ else {
+  afficherChiffre(heure / 10, 3); // Afficher la dizaine d'heures
+   afficherChiffre(heure % 10, 2); // Afficher l'unité d'heures
+   afficherChiffre(min / 10, 1); // Afficher la dizaine de minutes
+   afficherChiffre(min % 10, 0); // Afficher l'unité de minutes
+   lc.setLed(0,7,7,false);
+  }
+ 
   
-
-
-
   
+  Wire.beginTransmission(0x3C);
+ affichermenu();
+ delay(100);
+ Wire.endTransmission(0X3C);
+ Serial.print(choix);
 
+reveil();
+
+}
